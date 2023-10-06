@@ -20,11 +20,63 @@ You may use the IDE of your choice to develop the application, e.g. NetBeans, Ec
 create a plain Java project. Then you need to set up your execution environment by performing the
 following steps.
 
+## Requirements and Configurations
+
 #### Installing the MySQL driver
 MySQL’s JDBC driver is named "**com.mysql.jdbc.Driver**". It is shipped in a jar file named
 **"mysql-connector-java-x.y.z.jar**", which you can download from Campus. You must add this jar
 file to the libraries of your project: this will include the jar file in the classpath of the project.
 
+you can download the latest JDC connector here : https://dev.mysql.com/downloads/connector/j/
+
+![alt text](/image/JDC_co.png)
+
+    Right click on "Libraries" -> Add JAR/Folder -> Select your JDC connector x.x.xx
+
+#### Next Step :
+
+1) Go to service
+
+![alt text](/image/service.png)
+
+    Right click on "Databases"
+                |
+                v
+          New connection
+
+2) add driver
+
+![alt text](/image/add_driver.png)
+
+    Select "MySQL (Connector/J driver)
+                    |
+                    v
+                   Add
+                    |
+                    V
+     Select your JDC connector x.x.xx
+                    |
+                    V
+              click on Next
+
+3) configure connection
+
+![alt text](/image/config_co.png)
+
+    Change the Database name in our case is "company"
+                        |
+                        V
+             click on "Test Connection"
+                        |
+                        v    
+        if "Connection Succeeded" Click on next
+                        |
+                        v
+                       next
+                        |
+                        v
+                      finish
+                      
 #### Setting the name of the driver
 Next, you have to tell the JDBC runtime which driver you want to use. This is done through the
 jdbc.drivers system property, which you must set to the name of the driver.
@@ -46,8 +98,9 @@ section of the “Run” configuration of your project, as follows:
 -Djdbc.drivers=com.mysql.jdbc.Driver
 ```
 ![alt text](/image/vm.png)
+
 #### Setting the database’s URL
-The JDBC URL format for the MySQL’s driver is as follows:
+The JDBC URL format for the MySQL’s driver is as follows :
 ```
 jdbc:mysql://[host][:port]/[database]
 ```
@@ -56,11 +109,15 @@ Use the values defined in the “How to connect to your database” tutorial for
 database parts of the URL.
 
 #### Miscellaneous
+
 Development tip: to avoid writing _**try/catch**_ clauses everywhere in your code, add the
 _**throws SQLException**_ clause to all the methods / constructors that you develop, including main.
 
 ## Exercise 1
-Write the constructor of the class. The constructor takes the database’s **URL**, **the user’s login** and
+
+### Create Connection with MySQL :
+
+The constructor takes the database’s **URL**, **the user’s login** and
 **password** as parameters and establishes a connection to the database. The connection is stored in a
 (private) instance field, since all the other methods of the class use the connection
 
@@ -83,12 +140,48 @@ public class DataAccess {
   }
 }
 ```
-The parameters of the constructor are taken from the **String[ ] args** parameter of the main method.
+
 When using NetBeans, you can set these arguments in the **“Arguments”** section of the **“Run”**
 configuration of your project: in the corresponding field, list all the arguments on a single line, separated
 with space characters.
 
 ![alt text](/image/ex1.1.png)
+
+
+#### Workaround for NetBeans Bug
+The parameters of the constructor are taken from the **String[ ] args** parameter of the main method.
+
+```java
+public class Test {
+  /**
+   * @param args the command line arguments
+   *
+   * @throws java.lang.Exception
+   */
+  public static void main(String[] args) throws Exception {
+    ...
+}
+```
+
+There is a conditional check at the beginning of the main method :
+
+```java
+if (args.length == 2) {
+  args = Arrays.copyOf(args, 3);
+  args[2] = "";
+}
+```
+This code checks if there are exactly two command-line arguments (args.length == 2). If there are only two arguments, it adds an empty string as the third argument. This is done as a workaround for a potential bug in NetBeans, which might not pass the third argument correctly in certain situations.
+
+#### Creating a Data Access Object
+
+After the workaround, the code proceeds to create an instance of the DataAccess class:
+
+```java
+// create a data access object
+data = new DataAccess(args[0], args[1], args[2]);
+```
+It uses the command-line arguments (args) as parameters to the DataAccess constructor. The assumption here is that the first argument is the database URL, the second argument is the username, and the third argument is the password for the database connection.
 
 #### **`Test.java`**
 ```java
@@ -107,28 +200,87 @@ public class Test {
    * @throws java.lang.Exception
    */
   public static void main(String[] args) throws Exception {
-    //...
+        // work around Netbeans bug
+        if (args.length == 2) {
+          args = Arrays.copyOf(args, 3);
+          args[2] = "";
+        }
+
+        // create a data access object
+        data = new DataAccess(args[0], args[1], args[2]);
+
+        // access the database using high-level Java methods
+        // ...
+        // close the data access object when done
   }
 }
 ```
+#### Output :
 
-Next, write the **close( )** method, which closes the connection to the database and releases any
-resource associated with it. The application must call this method when it is done using the database.
+    run:
+    connected to jdbc:mysql://localhost:3306/company
+    BUILD SUCCESSFUL (total time: 0 seconds)
+
+### Close method :
+
+To close a database connection in Java, you should use the **close( )** method provided by the **java.sql.Connection interface**, which is typically implemented by database connection classes like **java.sql.Connection**, **java.sql.Statement**, and **java.sql.ResultSet**. 
+
+Here's how you can close a database connection in your Java code:
+
+#### **`DataAccess.java`**
+```java
+    // Method to close the database connection
+    public void closeConnection() {
+        if (connection != null) {
+            try {
+                connection.close();
+                System.out.println("Database connection closed.");
+            } catch (SQLException e) {
+                // Handle any potential exceptions here
+                e.printStackTrace();
+            }
+        }
+    }
+```
+After that we need to call the close method from **"DataAccess"** class, as below :
 
 #### **`Test.java`**
 ```java
-  public static void main(String[] args) throws Exception {
-    DataAccess data = null;
-    // work around Netbeans bug
-    if (args.length == 2) {
-      args = Arrays.copyOf(args, 3);
-      args[2] = "";
+    public static void main(String[] args) throws Exception {
+        DataAccess data = null;
+        
+        // work around Netbeans bug
+        if (args.length == 2) {
+          args = Arrays.copyOf(args, 3);
+          args[2] = "";
+        }
+        
+        try {
+            // create a data access object
+            data = new DataAccess(args[0], args[1], args[2]);
+
+            // access the database using high-level Java methods
+            // ...
+        } finally {
+            // close the data access object when done
+            if (data != null) {
+                data.closeConnection();
+            }
+        }
+        
+       
     }
-    // create a data access object
-    data = new DataAccess(args[0], args[1], args[2]);
-    // access the database using high-level Java methods
-    // ...
-    // close the data access object when done
-    // ...
-  }
 ```
+
+#### Output :
+
+    run:
+    connected to jdbc:mysql://localhost:3306/company
+    Database connection closed.
+    BUILD SUCCESSFUL (total time: 0 seconds)
+
+## Exercice 2
+
+Write the method List<EmployeeInfo> getEmployees() that returns the number, name and
+salary of all the employee in the EMP table. Note: the class EmployeeInfo is already defined in the
+model package.

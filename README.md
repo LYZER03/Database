@@ -1,117 +1,5 @@
 # ece-database-2023 LAB 4
 ## Java Database Connectivity (JDBC)
-The goal of the lab is to write a utility class named DataAccess that enables an application to
-transparently access its data, using high-level Java methods. The DataAccess class is meant to hide
-from the application how its data is actually stored (here, in a relational database) as well as all the
-complex machinery required to access it (here, JDBC library and SQL statements).
-
-The role of the application is played by the main method of some other class, e.g. Test. When launched,
-the application first creates an object of the DataAccess class. It then uses this object to read or write
-data to the database using the high-level methods developed in the exercises below.
-
-We take as an example the Company database of lab 2. The DataAccess class provides methods for
-retrieving the employee list, update their salary and so forth.
-
-Please refer to the Java API documentation for more information about the JDBC classes we’ll be using:
-http://docs.oracle.com/javase/8/docs/api/. They all belong to the _**java.sql**_ package.
-
-## Preamble
-You may use the IDE of your choice to develop the application, e.g. NetBeans, Eclipse, etc. You must first
-create a plain Java project. Then you need to set up your execution environment by performing the
-following steps.
-
-## Requirements and Configurations
-
-#### Installing the MySQL driver
-MySQL’s JDBC driver is named "**com.mysql.jdbc.Driver**". It is shipped in a jar file named
-**"mysql-connector-java-x.y.z.jar**", which you can download from Campus. You must add this jar
-file to the libraries of your project: this will include the jar file in the classpath of the project.
-
-you can download the latest JDC connector here : https://dev.mysql.com/downloads/connector/j/
-
-![alt text](/image/JDC_co.png)
-
-    Right click on "Libraries" -> Add JAR/Folder -> Select your JDC connector x.x.xx
-
-#### Next Step :
-
-1) Go to service
-
-![alt text](/image/service.png)
-
-    Right click on "Databases"
-                |
-                v
-          New connection
-
-2) add driver
-
-![alt text](/image/add_driver.png)
-
-    Select "MySQL (Connector/J driver)
-                    |
-                    v
-                   Add
-                    |
-                    V
-     Select your JDC connector x.x.xx
-                    |
-                    V
-              click on Next
-
-3) configure connection
-
-![alt text](/image/config_co.png)
-
-    Change the Database name in our case is "company"
-                        |
-                        V
-             click on "Test Connection"
-                        |
-                        v    
-        if "Connection Succeeded" Click on next
-                        |
-                        v
-                       next
-                        |
-                        v
-                      finish
-                      
-#### Setting the name of the driver
-Next, you have to tell the JDBC runtime which driver you want to use. This is done through the
-jdbc.drivers system property, which you must set to the name of the driver.
-
-You can do so by executing the following instruction in your code:
-```java
-System.setProperty("jdbc.drivers", "com.mysql.jdbc.Driver");
-```
-
-Better yet, you can set the jdbc.drivers property as a VM option when launching the application. If
-you launch it from the command line, you must use the following syntax:
-```java
-java –Djdbc.drivers=com.mysql.jdbc.Driver <class name>
-```
-
-If you launch the application from your IDE, you must set the system property in the “VM options”
-section of the “Run” configuration of your project, as follows:
-```java
--Djdbc.drivers=com.mysql.jdbc.Driver
-```
-![alt text](/image/vm.png)
-
-#### Setting the database’s URL
-The JDBC URL format for the MySQL’s driver is as follows :
-```
-jdbc:mysql://[host][:port]/[database]
-```
-
-Use the values defined in the “How to connect to your database” tutorial for the host, port and
-database parts of the URL.
-
-#### Miscellaneous
-
-Development tip: to avoid writing _**try/catch**_ clauses everywhere in your code, add the
-_**throws SQLException**_ clause to all the methods / constructors that you develop, including main.
 
 ## Exercise 1
 
@@ -229,47 +117,47 @@ Here's how you can close a database connection in your Java code:
 
 #### **`DataAccess.java`**
 ```java
-    // Method to close the database connection
-    public void closeConnection() {
-        if (connection != null) {
-            try {
-                connection.close();
-                System.out.println("Database connection closed.");
-            } catch (SQLException e) {
-                // Handle any potential exceptions here
-                e.printStackTrace();
-            }
+// Method to close the database connection
+public void closeConnection() {
+    if (connection != null) {
+        try {
+            connection.close();
+            System.out.println("Database connection closed.");
+        } catch (SQLException e) {
+            // Handle any potential exceptions here
+            e.printStackTrace();
         }
     }
+}
 ```
 After that we need to call the close method from **"DataAccess"** class, as below :
 
 #### **`Test.java`**
 ```java
-    public static void main(String[] args) throws Exception {
-        DataAccess data = null;
-        
-        // work around Netbeans bug
-        if (args.length == 2) {
-          args = Arrays.copyOf(args, 3);
-          args[2] = "";
-        }
-        
-        try {
-            // create a data access object
-            data = new DataAccess(args[0], args[1], args[2]);
-
-            // access the database using high-level Java methods
-            // ...
-        } finally {
-            // close the data access object when done
-            if (data != null) {
-                data.closeConnection();
-            }
-        }
-        
-       
+public static void main(String[] args) throws Exception {
+    DataAccess data = null;
+    
+    // work around Netbeans bug
+    if (args.length == 2) {
+        args = Arrays.copyOf(args, 3);
+        args[2] = "";
     }
+    
+    try {
+        // create a data access object
+        data = new DataAccess(args[0], args[1], args[2]);
+
+        // access the database using high-level Java methods
+        // ...
+    } finally {
+        // close the data access object when done
+        if (data != null) {
+            data.closeConnection();
+        }
+    }
+    
+    
+}
 ```
 
 #### Output :
@@ -282,5 +170,380 @@ After that we need to call the close method from **"DataAccess"** class, as belo
 ## Exercice 2
 
 Write the method List<EmployeeInfo> getEmployees() that returns the number, name and
-salary of all the employee in the EMP table. Note: the class EmployeeInfo is already defined in the
-model package.
+salary of all the employee in the EMP table. 
+
+#### **`Note: the class EmployeeInfo is already defined in the model package. So we can use those methods from EmployeeInfo class and put them into our new method to retrieve employee information`**
+
+#### **`EmployeeInfo.java`**
+```java
+package model;
+
+/**
+ *
+ * @author Jean-Michel Busca
+ */
+public class EmployeeInfo {
+
+  private final int id;
+  private final String name;
+  private final float salary;
+
+  public EmployeeInfo(int id, String name, float salary) {
+    this.id = id;
+    this.name = name;
+    this.salary = salary;
+  }
+
+  @Override
+  public String toString() {
+    return "EmployeeInfo{" + "id=" + id + ", name=" + name + ", salary=" + salary + "}\n";
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public float getSalary() {
+    return salary;
+  }
+
+}
+```
+
+In DataAccess class we can add a new method to retrieve employee information using the method from class Employeeinfo.
+
+```java
+// Method to get a list of EmployeeInfo objects
+public List<EmployeeInfo> getEmployees() throws SQLException {
+    List<EmployeeInfo> employees = new ArrayList<>();
+
+    // SQL query without a prepared statement (be cautious of SQL injection here)
+    String sql = "SELECT EID, ENAME, SAL FROM EMP";
+
+    try (Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql)) {
+        while (resultSet.next()) {
+            int id = resultSet.getInt("EID");
+            String name = resultSet.getString("ENAME");
+            float salary = resultSet.getFloat("SAL");
+
+            // Create an EmployeeInfo object and add it to the list
+            EmployeeInfo employee = new EmployeeInfo(id, name, salary);
+            employees.add(employee);
+        }
+    }
+
+    return employees;
+}
+```
+#### Output :
+
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+Employee ID: 7369
+Employee Name: SMITH
+Employee Salary: 800.0
+-----------------------
+Employee ID: 7499
+Employee Name: ALLEN
+Employee Salary: 1600.0
+-----------------------
+Employee ID: 7521
+Employee Name: WARD
+Employee Salary: 1250.0
+-----------------------
+Employee ID: 7566
+Employee Name: JONES
+Employee Salary: 2975.0
+-----------------------
+Employee ID: 7654
+Employee Name: MARTIN
+Employee Salary: 1250.0
+-----------------------
+Employee ID: 7698
+Employee Name: BLAKE
+Employee Salary: 2850.0
+-----------------------
+Employee ID: 7782
+Employee Name: CLARK
+Employee Salary: 2450.0
+-----------------------
+Employee ID: 7788
+Employee Name: SCOTT
+Employee Salary: 3000.0
+-----------------------
+Employee ID: 7839
+Employee Name: KING
+Employee Salary: 5000.0
+-----------------------
+Employee ID: 7844
+Employee Name: TURNER
+Employee Salary: 1500.0
+-----------------------
+Employee ID: 7876
+Employee Name: ADAMS
+Employee Salary: 1100.0
+-----------------------
+Employee ID: 7900
+Employee Name: JAMES
+Employee Salary: 950.0
+-----------------------
+Employee ID: 7902
+Employee Name: FORD
+Employee Salary: 3000.0
+-----------------------
+Employee ID: 7934
+Employee Name: MILLER
+Employee Salary: 1300.0
+-----------------------
+Employee ID: 8000
+Employee Name: SMITH
+Employee Salary: 3000.0
+-----------------------
+Database connection closed.
+BUILD SUCCESSFUL (total time: 2 seconds)
+```
+
+## Exercice 3
+
+Write the method boolean raiseSalary(String job, float amount) that raises the salary of
+the employees with the specified job by the specified amount.
+
+```java
+// Method to raise the salary of employees with a specified job by a specified amount
+public boolean raiseSalary(String job, float amount) throws SQLException {
+    // SQL query without a prepared statement (be cautious of SQL injection here)
+    String sql = "UPDATE EMP SET SAL = SAL + " + amount + " WHERE JOB = '" + job + "'";
+
+    try (Statement statement = connection.createStatement()) {
+        // Execute the SQL update
+        int rowsAffected = statement.executeUpdate(sql);
+
+        // Check if any rows were affected (salary updated)
+        return rowsAffected > 0;
+    }
+}
+```
+Call this method in our main 
+
+```java
+// Call the raiseSalary method to raise the salary of employees with a specified job
+String jobToRaise = "CLERK"; // Replace with the job you want to target
+float raiseAmount = 100;    // Replace with the amount by which to raise the salary
+
+boolean success = data.raiseSalary(jobToRaise, raiseAmount);
+
+if (success) {
+    System.out.println("Salary raised successfully.");
+} else {
+    System.out.println("No employees with the specified job found.");
+}
+```
+#### previous Output :
+
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+Salary raised successfully.
+Employee ID: 7369
+Employee Name: SMITH
+Employee Salary: 800.0
+-----------------------
+...
+-----------------------
+Employee ID: 7876
+Employee Name: ADAMS
+Employee Salary: 1100.0
+-----------------------
+Employee ID: 7900
+Employee Name: JAMES
+Employee Salary: 950.0
+-----------------------
+...
+-----------------------
+Employee ID: 7934
+Employee Name: MILLER
+Employee Salary: 1300.0
+-----------------------
+...
+-----------------------
+Database connection closed.
+BUILD SUCCESSFUL (total time: 2 seconds)
+```
+#### New Output :
+
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+Salary raised successfully.
+Employee ID: 7369
+Employee Name: SMITH
+Employee Salary: 900.0
+-----------------------
+...
+-----------------------
+Employee ID: 7876
+Employee Name: ADAMS
+Employee Salary: 1200.0
+-----------------------
+Employee ID: 7900
+Employee Name: JAMES
+Employee Salary: 1050.0
+-----------------------
+...
+-----------------------
+Employee ID: 7934
+Employee Name: MILLER
+Employee Salary: 1400.0
+-----------------------
+...
+-----------------------
+Database connection closed.
+BUILD SUCCESSFUL (total time: 2 seconds)
+```
+
+to perform an SQL injection attack that
+raises the salary of all employees, we just need to change our SQL query, like below.
+
+```java
+String sql = "UPDATE EMP SET SAL = SAL + ? WHERE JOB = ? OR 1 = 1 ";
+```
+the JOB value was "CLERK" and amount of salary to raise was 1.00$.
+but because of "1=1" statement, it will change all salary values instead of CLERK salary. 
+
+#### Output :
+
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+Salary raised successfully.
+Employee ID: 7369
+Employee Name: SMITH
+Employee Salary: 901.0
+-----------------------
+Employee ID: 7499
+Employee Name: ALLEN
+Employee Salary: 1601.0
+-----------------------
+Employee ID: 7521
+Employee Name: WARD
+Employee Salary: 1251.0
+-----------------------
+Employee ID: 7566
+Employee Name: JONES
+Employee Salary: 2976.0
+-----------------------
+Employee ID: 7654
+Employee Name: MARTIN
+Employee Salary: 1251.0
+-----------------------
+Employee ID: 7698
+Employee Name: BLAKE
+Employee Salary: 2851.0
+-----------------------
+Employee ID: 7782
+Employee Name: CLARK
+Employee Salary: 2451.0
+-----------------------
+Employee ID: 7788
+Employee Name: SCOTT
+Employee Salary: 3001.0
+-----------------------
+Employee ID: 7839
+Employee Name: KING
+Employee Salary: 5001.0
+-----------------------
+Employee ID: 7844
+Employee Name: TURNER
+Employee Salary: 1501.0
+-----------------------
+Employee ID: 7876
+Employee Name: ADAMS
+Employee Salary: 1201.0
+-----------------------
+Employee ID: 7900
+Employee Name: JAMES
+Employee Salary: 1051.0
+-----------------------
+Employee ID: 7902
+Employee Name: FORD
+Employee Salary: 3001.0
+-----------------------
+Employee ID: 7934
+Employee Name: MILLER
+Employee Salary: 1401.0
+-----------------------
+Employee ID: 8000
+Employee Name: SMITH
+Employee Salary: 3001.0
+-----------------------
+Database connection closed.
+BUILD SUCCESSFUL (total time: 0 seconds)
+```
+
+## Exercice 4
+
+Prepared statements are more efficient and secure than regular statements because they allow you to precompile SQL queries and reuse them with different parameter values. They provide the following benefits:
+
+**Security**: Prepared statements automatically handle parameterization of user input, making it much harder for malicious users to perform SQL injection attacks.
+
+**Performance**: Prepared statements are precompiled and can be reused with different parameter values. This reduces the overhead of query compilation, resulting in better performance for frequently executed queries.
+
+Here's how you can create versions of the getEmployees and raiseSalary methods that use prepared statements and ensure that SQL injection is no longer possible:
+
+#### **`DataAccess.java`**
+1) getEmployeesPS Method using Prepared Statement :
+```java
+// Method to get a list of EmployeeInfo objects using a prepared statement
+public List<EmployeeInfo> getEmployeesPS() throws SQLException {
+    List<EmployeeInfo> employees = new ArrayList<>();
+
+    // SQL query with a prepared statement
+    String sql = "SELECT EID, ENAME, SAL FROM EMP";
+
+    try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        // Set the job parameter for the prepared statement
+        //...
+
+        try (ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                int id = resultSet.getInt("EID");
+                String name = resultSet.getString("ENAME");
+                float salary = resultSet.getFloat("SAL");
+
+                // Create an EmployeeInfo object and add it to the list
+                EmployeeInfo employee = new EmployeeInfo(id, name, salary);
+                employees.add(employee);
+            }
+        }
+    }
+
+    return employees;
+}
+```
+2) raiseSalaryPS Method using Prepared Statement:
+
+```java
+// Method to raise the salary of employees with a specified job using a prepared statement
+public boolean raiseSalaryPS(String job, float amount) throws SQLException {
+    // SQL query with a prepared statement to update salary
+    String sql = "UPDATE EMP SET employee_salary = employee_salary + ? WHERE employee_job = ?";
+    
+    try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        // Set parameters for the prepared statement
+        statement.setFloat(1, amount);
+        statement.setString(2, job);
+
+        // Execute the SQL update
+        int rowsAffected = statement.executeUpdate();
+
+        // Check if any rows were affected (salary updated)
+        return rowsAffected > 0;
+    }
+}
+```

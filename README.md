@@ -547,3 +547,289 @@ public boolean raiseSalaryPS(String job, float amount) throws SQLException {
     }
 }
 ```
+## Exercice 5
+
+The methods that we will create next will use the methods from class DepartmentInfo :
+#### **`DepartmentInfo.java`**
+```java
+package model;
+
+/**
+ *
+ * @author Jean-Michel Busca
+ */
+public class EmployeeInfo {
+
+  private final int id;
+  private final String name;
+  private final float salary;
+
+  public EmployeeInfo(int id, String name, float salary) {
+    this.id = id;
+    this.name = name;
+    this.salary = salary;
+  }
+
+  @Override
+  public String toString() {
+    return "EmployeeInfo{" + "id=" + id + ", name=" + name + ", salary=" + salary + "}\n";
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public float getSalary() {
+    return salary;
+  }
+
+}
+```
+
+here are two implementations of the getDepartments method: one using statements and the other using prepared statements. Both implementations allow us to specify criteria and retrieve departments matching those criteria. If a criterion is null, it is omitted from the query.
+
+
+#### **`DataAccess.java`**
+1) "getDepartments" Method using Statements :
+```java
+// Method to retrieve departments matching the specified criteria using statements
+public List<DepartmentInfo> getDepartments(Integer id, String name, String location) throws SQLException {
+    List<DepartmentInfo> departments = new ArrayList<>();
+    StringBuilder sql = new StringBuilder("SELECT * FROM DEPT WHERE 1=1");
+
+    if (id != null) {
+        sql.append(" AND DID = ").append(id);
+    }
+
+    if (name != null) {
+        sql.append(" AND DNAME = '").append(name).append("'");
+    }
+
+    if (location != null) {
+        sql.append(" AND DLOC = '").append(location).append("'");
+    }
+
+    try (Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sql.toString())) {
+
+        while (resultSet.next()) {
+            int departmentId = resultSet.getInt("DID");
+            String departmentName = resultSet.getString("DNAME");
+            String departmentLocation = resultSet.getString("DLOC");
+
+            DepartmentInfo department = new DepartmentInfo(departmentId, departmentName, departmentLocation);
+            departments.add(department);
+        }
+    }
+
+    return departments;
+}
+```
+
+#### Input :
+
+```java
+List<DepartmentInfo> departments = data.getDepartments(null,null,null);
+```
+#### Output :
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+D ID: 10
+D Name: ACCOUNTING
+D LOC: NEW-YORK
+-----------------------
+D ID: 20
+D Name: RESEARCH
+D LOC: DALLAS
+-----------------------
+D ID: 30
+D Name: SALES
+D LOC: CHICAGO
+-----------------------
+D ID: 40
+D Name: OPERATIONS
+D LOC: BOSTON
+-----------------------
+Database connection closed.
+BUILD SUCCESSFUL (total time: 0 seconds)
+```
+
+
+#### Input :
+```java
+List<DepartmentInfo> departments = data.getDepartments(null,null,"NEW-YORK);
+```
+#### Output :
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+D ID: 10
+D Name: ACCOUNTING
+D LOC: NEW-YORK
+-----------------------
+Database connection closed.
+BUILD SUCCESSFUL (total time: 0 seconds)
+```
+
+
+#### Input :
+```java
+List<DepartmentInfo> departments = data.getDepartments(null,"RESEARCH","DALLAS);
+```
+#### Output :
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+D ID: 20
+D Name: RESEARCH
+D LOC: DALLAS
+-----------------------
+Database connection closed.
+BUILD SUCCESSFUL (total time: 0 seconds)
+```
+
+2) "getDepartments" Method using PreparedStatements :
+
+```java
+// Method to retrieve departments matching the specified criteria using prepared statements
+public List<DepartmentInfo> getDepartments(Integer id, String name, String location) throws SQLException {
+    List<DepartmentInfo> departments = new ArrayList<>();
+    String sql = "SELECT * FROM DEPT WHERE ";
+    boolean hasCriteria = false;
+
+    if (id != null) {
+        sql += "DID = ? ";
+        hasCriteria = true;
+    }
+
+    if (name != null) {
+        if (hasCriteria) {
+            sql += "AND ";
+        }
+        sql += "DNAME = ? ";
+        hasCriteria = true;
+    }
+
+    if (location != null) {
+        if (hasCriteria) {
+            sql += "AND ";
+        }
+        sql += "DLOC = ? ";
+    }
+
+    try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        int parameterIndex = 1;
+
+        if (id != null) {
+            statement.setInt(parameterIndex++, id);
+        }
+
+        if (name != null) {
+            statement.setString(parameterIndex++, name);
+        }
+
+        if (location != null) {
+            statement.setString(parameterIndex, location);
+        }
+
+        try (ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                int departmentId = resultSet.getInt("DID");
+                String departmentName = resultSet.getString("DNAME");
+                String departmentLocation = resultSet.getString("DLOC");
+
+                DepartmentInfo department = new DepartmentInfo(departmentId, departmentName, departmentLocation);
+                departments.add(department);
+            }
+        }
+    }
+
+    return departments;
+}
+```
+
+## Exercice 6
+
+To execute a SELECT statement on the database and return a list of strings representing the result, we can use JDBC to execute the query and process the result set. Here's a method executeQuery that accomplishes this:
+
+```java
+// Method to execute a SELECT query and return the result as a list of strings
+public List<String> executeQuery(String query) throws SQLException {
+    List<String> resultList = new ArrayList<>();
+
+    try (Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(query)) {
+
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+
+        // Append the header row to the result
+        StringBuilder header = new StringBuilder();
+        for (int i = 1; i <= columnCount; i++) {
+            header.append(metaData.getColumnName(i));
+            if (i < columnCount) {
+                header.append(", ");
+            }
+        }
+        resultList.add(header.toString());
+
+        // Append each tuple to the result
+        while (resultSet.next()) {
+            StringBuilder tuple = new StringBuilder();
+            for (int i = 1; i <= columnCount; i++) {
+                tuple.append(resultSet.getString(i));
+                if (i < columnCount) {
+                    tuple.append(", ");
+                }
+            }
+            resultList.add(tuple.toString());
+        }
+    }
+
+    return resultList;
+    
+}
+```
+
+Now we create a query and put it into executeQuery method as a parameter :
+```java
+String query = "SELECT EID, ENAME, SAL FROM EMP";
+List<String> exQuery = data.executeQuery(query);
+
+for (String line : exQuery) {
+    String[] parts = line.split("\t");
+    for (String part : parts) {
+        System.out.print(part + "\t");
+    }
+    System.out.println(); // Move to the next line
+}
+```
+
+#### Ouput :
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+EID, ENAME, SAL	
+7369, SMITH, 906.00	
+7499, ALLEN, 1602.00	
+7521, WARD, 1252.00	
+7566, JONES, 2977.00	
+7654, MARTIN, 1252.00	
+7698, BLAKE, 2852.00	
+7782, CLARK, 2452.00	
+7788, SCOTT, 3002.00	
+7839, KING, 5002.00	
+7844, TURNER, 1502.00	
+7876, ADAMS, 1206.00	
+7900, JAMES, 1056.00	
+7902, FORD, 3002.00	
+7934, MILLER, 1406.00	
+8000, SMITH, 3002.00	
+Database connection closed.
+BUILD SUCCESSFUL (total time: 0 seconds)
+```

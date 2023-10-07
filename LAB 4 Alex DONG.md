@@ -833,3 +833,152 @@ EID, ENAME, SAL
 Database connection closed.
 BUILD SUCCESSFUL (total time: 0 seconds)
 ```
+
+2) executeStatement Method using Prepared Statements :
+```java
+// Method to execute any SQL statement and return the result or the update count
+public List<String> executeStatement(String statement) throws SQLException {
+    List<String> resultList = new ArrayList<>();
+
+    // Check if the statement is a query or an update
+    boolean isQuery = statement.trim().toLowerCase().startsWith("select");
+
+    try {
+        if (isQuery) {
+            // Execute a query using a prepared statement
+            try (PreparedStatement preparedStatement = connection.prepareStatement(statement);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+                
+                ResultSetMetaData metaData = resultSet.getMetaData();
+                int columnCount = metaData.getColumnCount();
+
+                // Append the header row to the result
+                StringBuilder header = new StringBuilder();
+                for (int i = 1; i <= columnCount; i++) {
+                    header.append(metaData.getColumnName(i));
+                    if (i < columnCount) {
+                        header.append("\t");
+                    }
+                }
+                resultList.add(header.toString());
+                
+                // Process the result set and add rows to the result list
+                while (resultSet.next()) {
+                    StringBuilder row = new StringBuilder();
+                    for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
+                        row.append(resultSet.getString(i));
+                        if (i < resultSet.getMetaData().getColumnCount()) {
+                            row.append("\t");
+                        }
+                    }
+                    resultList.add(row.toString());
+                }
+            }
+        } else {
+            // Execute an update statement using a prepared statement
+            try (PreparedStatement preparedStatement = connection.prepareStatement(statement)) {
+                int updateCount = preparedStatement.executeUpdate();
+                resultList.add(String.valueOf(updateCount)); // Add update count to the result list
+            }
+        }
+    } catch (SQLException e) {
+        // Handle any SQL exception and add the error message to the result list
+        resultList.add("Error: " + e.getMessage());
+    }
+
+    return resultList;
+}
+```
+
+The executeStatement method first checks whether the statement is a SELECT query (case-insensitive check). If it's a query, it executes it using a prepared statement, processes the result set, and adds rows to the result list.
+
+If the statement is not a SELECT query, it's assumed to be an update statement (INSERT, UPDATE, DELETE, etc.), and it's executed using a prepared statement. The method then adds the update count to the result list.
+
+Any SQL exceptions are caught and added to the result list with an error message.
+
+By using prepared statements, this method can handle both queries and updates while providing security against SQL injection and better performance.
+
+#### Input :
+
+```java
+String query1 = "SELECT EID, ENAME, SAL FROM EMP";
+String query2 = "UPDATE EMP SET SAL = SAL + 100";
+
+System.out.println("Before");
+List<String> exQuery1 = data.executeStatement(query1);
+
+for (String line : exQuery1) {
+    String[] parts = line.split("\t");
+    for (String part : parts) {
+        System.out.print(part + "\t");
+    }
+    System.out.println(); // Move to the next line
+}
+
+System.out.println("values updated");
+List<String> exQuery2 = data.executeStatement(query2);
+
+for (String line : exQuery2) {
+    String[] parts = line.split("\t");
+    for (String part : parts) {
+        System.out.print(part + "\t");
+    }
+    System.out.println(); // Move to the next line
+}
+
+System.out.println("After");
+List<String> exQuery3 = data.executeStatement(query1);
+
+for (String line : exQuery3) {
+    String[] parts = line.split("\t");
+    for (String part : parts) {
+        System.out.print(part + "\t");
+    }
+    System.out.println(); // Move to the next line
+}
+```
+
+#### Output :
+
+```java
+run:
+connected to jdbc:mysql://localhost:3306/company
+Before
+EID	ENAME	SAL	
+7369	SMITH	1206.00	
+7499	ALLEN	1902.00	
+7521	WARD	1552.00	
+7566	JONES	3277.00	
+7654	MARTIN	1552.00	
+7698	BLAKE	3152.00	
+7782	CLARK	2752.00	
+7788	SCOTT	3302.00	
+7839	KING	5302.00	
+7844	TURNER	1802.00	
+7876	ADAMS	1506.00	
+7900	JAMES	1356.00	
+7902	FORD	3302.00	
+7934	MILLER	1706.00	
+8000	SMITH	3302.00	
+Value updated
+15	
+After
+EID	ENAME	SAL	
+7369	SMITH	1306.00	
+7499	ALLEN	2002.00	
+7521	WARD	1652.00	
+7566	JONES	3377.00	
+7654	MARTIN	1652.00	
+7698	BLAKE	3252.00	
+7782	CLARK	2852.00	
+7788	SCOTT	3402.00	
+7839	KING	5402.00	
+7844	TURNER	1902.00	
+7876	ADAMS	1606.00	
+7900	JAMES	1456.00	
+7902	FORD	3402.00	
+7934	MILLER	1806.00	
+8000	SMITH	3402.00	
+Database connection closed.
+BUILD SUCCESSFUL (total time: 2 seconds)
+```

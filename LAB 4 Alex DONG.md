@@ -982,3 +982,7 @@ EID	ENAME	SAL
 Database connection closed.
 BUILD SUCCESSFUL (total time: 2 seconds)
 ```
+
+Prepared statements are used for both methods to ensure SQL safety and improve performance. Prepared statements automatically handle parameterization and SQL injection prevention.
+
+These implementations provide secure and efficient ways to execute both SELECT queries and other SQL statements while leveraging the benefits of prepared statements.

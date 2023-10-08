@@ -33,7 +33,7 @@ When using NetBeans, you can set these arguments in the **“Arguments”** sect
 configuration of your project: in the corresponding field, list all the arguments on a single line, separated
 with space characters.
 
-![alt text](/image/ex1.1.png)
+![alt text](./image/ex1.1.png)
 
 
 #### Workaround for NetBeans Bug
